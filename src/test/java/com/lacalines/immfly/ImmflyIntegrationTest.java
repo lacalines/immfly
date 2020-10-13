@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -26,6 +27,7 @@ public class ImmflyIntegrationTest extends AbstractImmflyTest {
 	private MockMvc mockMvc;
 
 	@Test
+	@WithMockUser(roles = {"ADMIN"})
 	void testFlight() throws Exception {
 		FlightInformation[] flightInformation = { new FlightInformation("IBB653", "IBB653-1581399936-airline-0136",
 				"IBB", "NT", "653", "EC-MYT", "Form_Airline", "IBE123", false, false, false,
@@ -38,9 +40,14 @@ public class ImmflyIntegrationTest extends AbstractImmflyTest {
 	}
 
 	@Test
+	@WithMockUser(roles = {"ADMIN"})
 	void testFlightNotFound() throws Exception {
 		mockWebServer.enqueue(new MockResponse().setBody("[]").addHeader("Content-Type", "application/json"));
 		mockMvc.perform(get("/v1/flight-information/EC-MYT/653")).andExpect(status().is4xxClientError());
 	}
 
+	@Test
+	void testUnauthorizedAdminUser() throws Exception {
+		mockMvc.perform(get("/v1/flight-information/EC-MYT/653")).andExpect(status().is4xxClientError());
+	}
 }
